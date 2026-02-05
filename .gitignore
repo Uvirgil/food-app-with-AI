@@ -1,0 +1,37 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+
+# --- Streamlit ---
+.streamlit/
+
+# --- Virtual environments ---
+venv/
+env/
+.venv/
+ENV/
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Project sensitive files ---
+secret_key.py
+api.txt
+
+# --- User data (optional, daca nu vrei sa urci istoricul real) ---
+history.json
+users.json
+
+# --- Logs ---
+*.log
+
+# --- PyInstaller output ---
+dist/
+build/
+*.spec
