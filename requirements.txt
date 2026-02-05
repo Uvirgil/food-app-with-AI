@@ -1,4 +1,7 @@
 streamlit
 pandas
+numpy
 openai
+plotly
+Pillow
 python-dotenv
