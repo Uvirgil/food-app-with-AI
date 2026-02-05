@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image
 from openai import OpenAI
-from secret_key import OPENAI_API_KEY
+# from secret_key import OPENAI_API_KEY
 from auth import authenticate, create_account
 from history import load_history, add_entry
 import plotly.express as px
@@ -11,6 +11,10 @@ import json
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
+try:
+    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+except Exception:
+    from secret_key import OPENAI_API_KEY
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
