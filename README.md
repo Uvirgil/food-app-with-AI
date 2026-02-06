@@ -103,10 +103,10 @@ cd <repo>
 pip install -r requirements.txt
 ```
 
-### 3. Adauga cheia API in `api.txt`
+### 3. Adauga cheia API in `secret_key.py`
 
 ```
-sk-xxxxxxxxxxxxxxxxxxxx
+OPENAI_API_KEY = "xxxxxxxxxxxxxxxxxxxx"
 ```
 
 ### 4. Porneste aplicatia
@@ -152,18 +152,3 @@ Aplicatia poate fi transformata intr-o aplicatie Android/iOS folosind:
 - integrare cu smartwatch  
 
 ---
-
-## 📜 Licenta
-
-Acest proiect este licentiat sub **MIT License**.
-
----
-
-Daca vrei, pot sa-ti fac si:
-
-- un banner vizual pentru partea de sus  
-- un GIF demo cu aplicatia in actiune  
-- un badge cu numarul de calorii analizate (dinamic)  
-- un `.gitignore` optimizat pentru proiectul tau  
-
-Spune-mi doar ce vrei sa adaug.

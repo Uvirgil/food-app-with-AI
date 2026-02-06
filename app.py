@@ -299,6 +299,8 @@ elif page == "Istoric":
 
 
 
+
+
 # ----------------- PAGINA: STATISTICI -----------------
 
 elif page == "Statistici":
@@ -483,6 +485,8 @@ elif page == "Statistici":
         """,
         unsafe_allow_html=True
     )
+
+
 
 
 
