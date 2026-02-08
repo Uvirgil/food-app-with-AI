@@ -23,6 +23,7 @@ Thumbs.db
 # --- Project sensitive files ---
 secret_key.py
 api.txt
+peviitor.txt
 
 # --- User data (optional, daca nu vrei sa urci istoricul real) ---
 history.json
