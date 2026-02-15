@@ -24,6 +24,9 @@ Thumbs.db
 secret_key.py
 api.txt
 peviitor.txt
+app.py
+history.py
+
 
 # --- User data (optional, daca nu vrei sa urci istoricul real) ---
 history.json
