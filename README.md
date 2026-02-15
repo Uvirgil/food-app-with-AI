@@ -65,15 +65,21 @@ Cheia trebuie adaugata in fisierul api.txt din directorul principal al proiectul
 
 ```
 FOOD APP WITH AI/
+app/
 │
-├── app.py               # Aplicatia principala Streamlit
-├── auth.py              # Logica de autentificare
-├── history.py           # Functii pentru istoricul alimentar
-├── history.json         # Istoricul utilizatorilor
-├── users.json           # Datele utilizatorilor
-├── secret_key.py        # Cheia secreta pentru sesiuni
-├── api.txt              # Cheia API pentru modelul AI
-└── __pycache__/         # Cache automat generat
+├── main.py
+│
+├── core/
+│   ├── vision.py
+│   ├── auth_manager.py
+│   ├── history_manager.py
+│   ├── calorie_settings.py
+│
+└── pages/
+    ├── home_page.py
+    ├── history_page.py
+    ├── stats_page.py
+    ├── profile_page.py
 ```
 
 ---
