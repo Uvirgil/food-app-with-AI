@@ -69,7 +69,7 @@ def main():
 
         # Initializam obiectele necesare pentru pagini
         settings = CalorieSettings(st.session_state)
-        vision = VisionAnalyzer(api_key=get_api_key())
+        vision = VisionAnalyzer()
         history = HistoryManager(current_user)
 
         # Navigare intre pagini
@@ -83,5 +83,5 @@ def main():
             ProfilePage(settings, current_user).render()
 
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
