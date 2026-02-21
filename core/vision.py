@@ -3,6 +3,8 @@ import base64
 from openai import OpenAI
 from PIL import Image
 import json
+from ultralytics import YOLO
+import requests
 
 
 # class VisionAnalyzer:
@@ -44,63 +46,169 @@ import json
 #             ],
 #         )
 
-import io
-import base64
-import requests
-from PIL import Image
+# import io
+# import base64
+# import requests
+# from PIL import Image
+
+# class VisionAnalyzer:
+#     def __init__(self):
+#         self.url = "http://localhost:11434/api/chat"
+
+#     def _prompt(self):
+#         return (
+#             "Analizează această imagine cu mâncare și întoarce STRICT un JSON cu:\n"
+#             "{ 'food': 'nume aliment', 'calories': număr estimat, 'confidence': procent' }"
+#         )
+
+#     def analyze(self, image: Image.Image) -> str:
+#         try:
+#             # 🔥 1. Micșorăm imaginea la max 512 px (păstrează proporțiile)
+#             image.thumbnail((512, 512))
+            
+#             buf = io.BytesIO()
+#             image.save(buf, format="PNG")
+#             img_bytes = buf.getvalue()
+
+#             img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+
+#             payload = {
+#                 "model": "qwen3-vl:2b",    # sau modelul qwen3-vl:8b pentru o detectie mai avansata
+#                 "stream": False,
+#                 "messages": [
+#                     {
+#                         "role": "user",
+#                         "content": self._prompt(),
+#                         "images": [img_b64]
+#                     }
+#                 ]
+#             }
+
+#             response = requests.post(self.url, json=payload, timeout=400)
+
+#             # folosim json.loads pentru siguranță
+#             data = json.loads(response.text)
+
+#             if "error" in data:
+#                 return f"Eroare Ollama: {data['error']}"
+
+#             if "message" in data and "content" in data["message"]:
+#                 return data["message"]["content"]
+
+#             return f"Răspuns necunoscut de la Ollama: {data}"
+
+#         except Exception as e:
+#             return f"Eroare la conectarea cu Ollama: {e}"
 
 class VisionAnalyzer:
     def __init__(self):
-        self.url = "http://localhost:11434/api/chat"
+        # YOLO pentru detectarea farfuriei
+        self.detector = YOLO("yolov8s.pt")
+
+        # Modelul Ollama (vizual + rapid pe CPU)
+        self.ollama_model = "qwen3-vl:8b"
+        self.ollama_url = "http://localhost:11434/api/chat"
 
     def _prompt(self):
+        """Prompt optimizat pentru viteză și acuratețe."""
         return (
-            "Analizează această imagine cu mâncare și întoarce STRICT un JSON cu:\n"
-            "{ 'food': 'nume aliment', 'calories': număr estimat, 'confidence': procent' }"
+            "Analizează această imagine cu mâncare. "
+            "Identifică felul de mâncare, ingredientele principale și oferă o estimare aproximativă a caloriilor. "
+            "Răspunde STRICT în format JSON cu cheile: "
+            "{'food': '', 'ingredients': [], 'calories': 0}."
         )
 
-    def analyze(self, image: Image.Image) -> str:
-        try:
-            # 🔥 1. Micșorăm imaginea la max 512 px (păstrează proporțiile)
-            image.thumbnail((512, 512))
-            
-            buf = io.BytesIO()
-            image.save(buf, format="PNG")
-            img_bytes = buf.getvalue()
+    def _crop_plate(self, image: Image.Image):
+        results = self.detector(image)
+        boxes = results[0].boxes
 
-            img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+        if len(boxes) == 0:
+            return None
 
-            payload = {
-                "model": "qwen3-vl:2b",    # sau modelul qwen3-vl:8b pentru o detectie mai avansata
-                "stream": False,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": self._prompt(),
-                        "images": [img_b64]
-                    }
-                ]
+        PLATE_CLASSES = [41, 45]  # bowl, plate
+
+        # Filtrăm doar farfuriile
+        plate_boxes = [
+            b for b in boxes
+            if int(b.cls[0]) in PLATE_CLASSES
+        ]
+
+        if len(plate_boxes) == 0:
+            return None
+
+        # Alegem farfuria cu aria cea mai mare
+        def area(b):
+            x1, y1, x2, y2 = b.xyxy[0].tolist()
+            return (x2 - x1) * (y2 - y1)
+
+        best = max(plate_boxes, key=area)
+
+        x1, y1, x2, y2 = best.xyxy[0].tolist()
+        return image.crop((x1, y1, x2, y2))
+
+    def _ask_ollama(self, cropped_image: Image.Image):
+        """Trimite farfuria decupată la Ollama pentru analiză."""
+
+        # Convertim imaginea în base64
+        cropped_image.save("debug_plate.png")
+        print("DEBUG: imagine trimisă la Ollama salvată ca debug_plate.png")
+        buf = io.BytesIO()
+        cropped_image.save(buf, format="PNG")
+        img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+        payload = {
+            "model": self.ollama_model,
+            "stream": False,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": self._prompt(),
+                    "images": [img_b64]
+                }
+            ],
+            "options": {
+                "temperature": 0.2,
+                "num_predict": 150
             }
+        }
 
-            response = requests.post(self.url, json=payload, timeout=400)
+        try:
+            response = requests.post(self.ollama_url, json=payload, timeout=200)
+            data = response.json()
 
-            # folosim json.loads pentru siguranță
-            data = json.loads(response.text)
-
-            if "error" in data:
-                return f"Eroare Ollama: {data['error']}"
-
+            # Extragem textul generat
             if "message" in data and "content" in data["message"]:
                 return data["message"]["content"]
 
-            return f"Răspuns necunoscut de la Ollama: {data}"
+            return json.dumps({"error": "Invalid response from Ollama"})
 
         except Exception as e:
-            return f"Eroare la conectarea cu Ollama: {e}"
+            return json.dumps({"error": str(e)})
+
+    def analyze(self, image: Image.Image):
+        """Pipeline complet: YOLO detect → crop → fallback → Ollama → JSON final."""
+
+        # 1️⃣ detectăm farfuria principală
+        cropped = self._crop_plate(image)
+
+        # 2️⃣ fallback: dacă YOLO nu găsește farfuria, trimitem întreaga imagine
+        if cropped is None:
+            print("⚠️ YOLO nu a detectat farfuria — trimit întreaga imagine la Ollama")
+            cropped = image
+
+        # 3️⃣ salvăm imaginea trimisă la Ollama pentru debug
+        cropped.save("debug_plate.png")
+        print("DEBUG: imagine trimisă la Ollama salvată ca debug_plate.png")
+
+        # 4️⃣ trimitem farfuria la Ollama
+        result = self._ask_ollama(cropped)
+
+        # 5️⃣ returnăm JSON-ul final
+        return result
 
     @staticmethod
     def _prompt() -> str:
-        # Prompt trimis catre model pentru a forta un raspuns JSON strict
+        """Prompt strict pentru JSON valid."""
         return (
             "Analyze the food in the image and return ONLY a valid JSON object.\n"
             "Use STRICT JSON rules:\n"

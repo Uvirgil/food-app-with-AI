@@ -39,3 +39,16 @@ users.json
 dist/
 build/
 *.spec
+
+
+# --- Tests files ---
+test_yolo.py
+
+# --- Yolo model files ---
+weights/
+yolov8s.pt
+
+
+#  --- Photos ---
+*.jpg
+*.png 
